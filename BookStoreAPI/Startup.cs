@@ -1,5 +1,6 @@
 using BookStoreAPI.Contracts;
 using BookStoreAPI.Data;
+using BookStoreAPI.Mappings;
 using BookStoreAPI.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -47,6 +48,9 @@ namespace BookStoreAPI
                     .AllowAnyMethod()
                     .AllowAnyHeader());
             });
+
+            //sada nas projekat zna za servis automaper koji koristimo
+            services.AddAutoMapper(typeof(Maps));
 
 
             //dodato
