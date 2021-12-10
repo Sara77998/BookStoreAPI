@@ -67,8 +67,11 @@ namespace BookStoreAPI
             });
 
             //ukljucuje se nlog servis
-            services.AddSingleton<ILoggerService, LoggerService>()
-;
+            services.AddSingleton<ILoggerService, LoggerService>();
+            //ukljucuje se author repository
+            services.AddScoped<IAuthorRepository, AuthorRepository>();
+
+
             //ne koriste se razor pages vise nego controllers
             services.AddControllers();
         }
