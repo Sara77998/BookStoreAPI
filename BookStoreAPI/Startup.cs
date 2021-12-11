@@ -70,7 +70,7 @@ namespace BookStoreAPI
             services.AddSingleton<ILoggerService, LoggerService>();
             //ukljucuje se author repository
             services.AddScoped<IAuthorRepository, AuthorRepository>();
-
+            services.AddScoped<IBookRepository, BookRepository>();
 
             //ne koriste se razor pages vise nego controllers
             services.AddControllers();
