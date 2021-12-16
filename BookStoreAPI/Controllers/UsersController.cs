@@ -27,11 +27,13 @@ namespace BookStoreAPI.Controllers
 
         public UsersController(SignInManager<IdentityUser> signInManager,
             UserManager<IdentityUser> userManager,
-            ILoggerService logger)
+            ILoggerService logger,
+            IConfiguration config)
         {
             _signInManager = signInManager;
             _userManager = userManager;
             _logger = logger;
+            _config = config;
         }
 
         /// <summary>
@@ -39,6 +41,7 @@ namespace BookStoreAPI.Controllers
         /// </summary>
         /// <param name="userDTO"></param>
         /// <returns></returns>
+        [Route("login")]
         [AllowAnonymous]
         [HttpPost]
         public async Task<IActionResult> Login([FromBody] UserDTO userDTO)
@@ -48,27 +51,69 @@ namespace BookStoreAPI.Controllers
             {
                 var username = userDTO.Username;
                 var password = userDTO.Password;
-               
+                _logger.LogInfo($"{location}: Login Attempt from user {username} ");
                 var result = await _signInManager.PasswordSignInAsync(username, password, false, false);
-
+                
                 if (result.Succeeded)
                 {
-
-                    var user = await _userManager.FindByNameAsync(username);
+                    _logger.LogInfo($"{location}: {username} Successfully Authenticated");
+                    var user = await _userManager.FindByEmailAsync(username);
+                    _logger.LogInfo($"{location}: Generating Token");
                     var tokenString = await GenerateJSONWebToken(user);
-                    return Ok(new { token = tokenString});
+                    return Ok(new { token = tokenString });
                 }
-
+                _logger.LogInfo($"{location}: {username} Not Authenticated");
                 return Unauthorized(userDTO);
             }
-            catch (Exception)
+            catch (Exception e)
             {
-
-                throw;
+                return InternalError($"{location}: {e.Message} - {e.InnerException}");
             }
             
         }
 
+
+        /// <summary>
+        /// User register endpoint
+        /// </summary>
+        /// <param name="userDTO"></param>
+        /// <returns></returns>
+        [Route("register")]
+        [HttpPost]
+        public async Task<IActionResult> Register([FromBody] UserDTO userDTO)
+        {
+            var location = GetControllerActionNames();
+            try
+            {
+                var username = userDTO.Username;
+                var password = userDTO.Password;
+                _logger.LogInfo($"{location}: Registration Attempt for user {username} ");
+
+                var user = new IdentityUser
+                {
+                    Email = username,
+                    UserName = username
+                };
+                var result = await _userManager.CreateAsync(user, password);
+
+                if (!result.Succeeded)
+                {
+                    
+                    foreach (var error in result.Errors)
+                    {
+                        _logger.LogError($"{location}: {error.Code} {error.Description}");
+                    }
+                    return InternalError($"{location} : {username} User registration attempt failed");
+                }
+                return Ok(new { result.Succeeded });
+            }
+            catch (Exception e)
+            {
+
+                return InternalError($"{location}: {e.Message} - {e.InnerException}");
+            }
+        }
+       
         private async Task<string> GenerateJSONWebToken(IdentityUser user)
         {
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
@@ -101,6 +146,12 @@ namespace BookStoreAPI.Controllers
             var action = ControllerContext.ActionDescriptor.ActionName;
 
             return $"{controller} - {action}";
+        }
+
+        private ObjectResult InternalError(string message)
+        {
+            _logger.LogError(message);
+            return StatusCode(500, "Something went wrong. Please contact the Administrator");
         }
     }
 }

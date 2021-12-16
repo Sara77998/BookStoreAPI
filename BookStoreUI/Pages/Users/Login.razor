@@ -1,0 +1,61 @@
+﻿@page "/login"
+
+@using BookStoreUI.Models
+@using BookStoreUI.Contracts
+
+@inject IAuthenticationRepository _authRepo
+@inject NavigationManager _navManager
+
+
+
+<div class="card">
+<h3 class="card-title">Login</h3>
+@if (!response)
+{
+    <div class="alert alert-danger">
+        Smth went wrong with registration attempt!
+    </div>
+}
+<div class="card-body">
+    <EditForm Model="Model" OnValidSubmit="HandleLogin">
+
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <div class="form-group">
+            <label for="email">Email Address</label>
+            <InputText class="form-control" Id="email" @bind-Value="Model.Username" />
+            <ValidationMessage For="@(() => Model.Username)" />
+
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <InputText class="form-control" Id="password" type="password" @bind-Value="Model.Password" />
+            <ValidationMessage For="@(() => Model.Password)" />
+
+        </div>
+        
+        <button type="submit" class="btn btn-primary btn-block">Login</button>
+
+    </EditForm>
+</div>
+</div>
+
+
+
+
+
+@code {
+    private LoginModel Model = new LoginModel();
+    bool response = true;
+
+    private async Task HandleLogin()
+    {
+        var response = await _authRepo.Login(Model);
+
+        if (response)
+        {
+            _navManager.NavigateTo("/home");
+        }
+
+    }
+}
